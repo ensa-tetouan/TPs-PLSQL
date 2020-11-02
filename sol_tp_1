@@ -1,0 +1,112 @@
+-- 1
+DECLARE
+	v_nom varchar2(100);
+	v_prenom varchar2(100);
+BEGIN
+	dbms_output.put_line( 'entrez votre nom' );
+	v_nom := '$v_nom';
+	dbms_output.put_line( 'entrez votre prenom' );
+	v_prenom := '$v_prenom';
+END;
+
+-- 2 3 4
+DECLARE
+	v_nb_employees int;
+	v_nb_employees_mg1 int;
+	v_propotion int;
+BEGIN
+	SELECT count(*) INTO v_nb_employees FROM employees; 
+	dbms_output.put_line( 'le nb demployee est :' || v_nb_employees );
+	SELECT count(*) INTO v_nb_employees_mg1 FROM employees WHERE MANAGER_ID = 1; 
+	dbms_output.put_line( 'le nb demployee est :' || v_nb_employees_mg1 );
+	v_propotion := (v_nb_employees_mg1/v_nb_employees)*100;
+	dbms_output.put_line( 'la proportion est :' || v_propotion || '%');
+END;
+
+-- 5
+DECLARE
+	v_last_name varchar2(100);
+	v_first_name varchar2(100);
+	v_hire_date date;
+	v_employee_id int;
+BEGIN
+    dbms_output.put_line( 'Entrez ID demployees pour afficher ces donnes : ' );
+    v_employee_id := '$v_employee_id';
+    SELECT LAST_NAME INTO v_last_name FROM employees WHERE  employee_id = v_employee_id; 
+    SELECT FIRST_NAME INTO v_first_name FROM employees WHERE  employee_id = v_employee_id; 
+    SELECT HIRE_DATE INTO v_hire_date FROM employees WHERE  employee_id = v_employee_id; 
+	dbms_output.put_line( '-le prenom est : ' || v_last_name || ' -le nom est : ' || v_first_name || ' -hire date est : ' || v_hire_date );
+END;
+
+-- 6
+DECLARE
+    v_employee_id int;
+    TYPE r_employee
+    IS RECORD(
+         v_last_name EMPLOYEES.LAST_NAME%TYPE,
+         v_first_name EMPLOYEES.FIRST_NAME%TYPE,
+         v_hire_date EMPLOYEES.HIRE_DATE%TYPE
+    );
+     employee r_employee;
+
+BEGIN
+    dbms_output.put_line ('entrez id de employee');
+    v_employee_id := $v_employee_id;
+    SELECT LAST_NAME INTO employee.v_last_name FROM EMPLOYEES WHERE EMPLOYEE_ID = v_employee_id ;
+    SELECT FIRST_NAME INTO  employee.v_first_name FROM EMPLOYEES WHERE EMPLOYEE_ID = v_employee_id ;
+    SELECT HIRE_DATE INTO employee.v_hire_date FROM EMPLOYEES WHERE EMPLOYEE_ID = v_employee_id ;
+    dbms_output.put_line ( 'last name : ' || employee.v_last_name ||' \nfirst name : ' || employee.v_first_name || ' hire date : ' || employee.v_hire_date);
+END;
+
+--7
+DECLARE 
+    v_product_id int;
+    product_rec products%rowtype; 
+BEGIN 
+    v_product_id := $v_product_id;
+    SELECT * into product_rec 
+    FROM products
+    WHERE product_id = v_product_id;  
+    dbms_output.put_line('product_name : ' || product_rec.product_name); 
+    dbms_output.put_line('description : ' || product_rec.description ); 
+    dbms_output.put_line('standard_cost: ' || product_rec.standard_cost); 
+    dbms_output.put_line('list_price: ' || product_rec.list_price); 
+    dbms_output.put_line('category_id: ' || product_rec.category_id); 
+END;
+
+--8
+DECLARE
+v_employee_id int;
+TYPE r_mgr
+IS RECORD(
+ manager EMPLOYEES%ROWTYPE;
+)
+TYPE r_emp
+IS RECORD(
+ employee EMPLOYEES%ROWTYPE;
+)
+ r_manager r_mgr;
+ r_employee r_emp;
+
+BEGIN
+
+ dbms_output.put_line ('entrez l'id de l employee ');
+ v_employee.id:= &v_employee_id;
+SELECT * INTO r_employee FROM EMPLOYEES WHERE EMPLOYEE_ID=  v_employee.id: ;
+SELECT * INTO r_manager FROM EMPLOYEES WHERE EMPLOYEE_ID= v_employee.MANAGER_ID ; 
+
+    dbms_output.put_line( 'first_name : ' || r_employee.first_name); 
+    dbms_output.put_line( 'last_name : ' || r_employee.last_name); 
+    dbms_output.put_line( 'email : ' || r_employee.email); 
+    dbms_output.put_line( 'phone : ' || r_employee.phone); 
+    dbms_output.put_line( 'hire date : ' || r_employee.hire_date); 
+    dbms_output.put_line( 'job title: ' || r_employee.job_title); 
+
+    dbms_output.put_line( 'first_name : ' || r_manager.first_name); 
+    dbms_output.put_line( 'last_name : ' || r_manager.last_name); 
+    dbms_output.put_line( 'email : ' || r_manager.email); 
+    dbms_output.put_line( 'phone : ' || r_manager.phone); 
+    dbms_output.put_line( 'hire date : ' || r_manager.hire_date); 
+    dbms_output.put_line( 'job title: ' || r_manager.job_title); 
+
+END;
