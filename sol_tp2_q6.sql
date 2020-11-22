@@ -1,46 +1,21 @@
-SET SERVEROUTPUT ON;    
--- CHABOU SOUFIAN GI2 --
-
-
-
--- QUESTION 6 Pour un manager donnée (ID est a saisir) afficher le nombre de vente de ses employés (prévoir lecas où l’ID n’existe pas)
+set serveroutput on; --CHABOU SOUFIAN GI2
 
 
 DECLARE
-
-        v_salesman orders.salesman_id%type;
-        v_MANAGER_ID EMPLOYEES.MANAGER_id%type;
-        CURSOR C_ORDER IS
-         SELECT * FROM orders WHERE salesman_id = v_salesman ;
-        
-        CURSOR C_EMPLOYEE IS
-        SELECT * FROM EMPLOYEES  WHERE job_title = 'Sales Representative' AND EMPLOYEES.MANAGER_ID = v_MANAGER_ID; 
-        
-        J INTEGER := 0;
-      
+     id_manager employees.manager_id%type; 
+   
+    CURSOR C_manager is 
+     select count(*) as total from employees inner join orders on orders.salesman_id = employees.employee_id and orders.status = 'Shipped' and employees.job_title ='Sales Representative' and employees.manager_id = id_manager ;
+  
+ 
 BEGIN
-       DBMS_OUTPUT.PUT_LINE('**************************************************************** ');
-
+    id_manager := '&id_manager';
+    for n in C_manager  loop
     
-       v_MANAGER_ID :='&v_MANAGER_ID';
-        
-        FOR M IN C_EMPLOYEE  LOOP   
-          v_salesman := M.employee_id;
-            IF v_salesman IS NULL THEN
-              DBMS_OUTPUT.PUT_LINE(' MANAGER NOT FOUND !');
-              EXIT;
-            ELSE
-        FOR N IN C_ORDER LOOP
-        J := J+1;
-        END LOOP; 
-        DBMS_OUTPUT.PUT_LINE('le nombre de vente de l''employee '|| v_salesman || ' est : ' ||J);
-        J :=0;
-        END IF;
-    END LOOP;
-       DBMS_OUTPUT.PUT_LINE(' ***************************** fin ***************************** ');
+          dbms_output.put_line('le nombre des vente des employee de manager : '||id_manager ||' est : '||n.total);
+          
+    end loop;
+
+
 
 END;
-
-/
-
-

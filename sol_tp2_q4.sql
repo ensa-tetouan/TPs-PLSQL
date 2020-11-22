@@ -1,54 +1,43 @@
-SET SERVEROUTPUT ON;    
--- CHABOU SOUFIAN GI2 --
-
-
-
--- QUESTION 4 --  Même question pour les clients ayant fait plus de 10000$ d’achat
+SET SERVEROUTPUT ON; --CHABOU SOUFIAN GI2
 
 DECLARE 
 
-     NOMBRE_LIGNE NUMBER(10) :=0;
-     
-         v_client_id customers.customer_id%type;
-        CURSOR C_ORDER IS
-        SELECT * FROM ORDERS WHERE customer_id= v_client_id ;
-        
-        CURSOR C_CUSTOMERS IS
-        SELECT * FROM CUSTOMERS;
-        
-        i INTEGER := 0;
-     
-        TOTAL_ACHAT order_items.unit_price%TYPE :=0;
-        PRIX order_items.unit_price%TYPE :=0;
-          
-BEGIN
-
-     DBMS_OUTPUT.PUT_LINE('**************************************************************** ');
-  
-     FOR M IN C_CUSTOMERS LOOP
-        v_client_id := M.CUSTOMER_ID;
-      FOR N IN C_ORDER LOOP
-        i := i+1;
-        SELECT unit_price INTO PRIX FROM order_items  WHERE order_items.order_id = N.ORDER_ID AND ROWNUM =1;
-        TOTAL_ACHAT := TOTAL_ACHAT + PRIX ;
-      END LOOP;
-      IF I > 0 THEN
-       DBMS_OUTPUT.PUT_LINE('le nombrede commande de cliant '|| v_client_id||' est : '||i || ' le total d''achat est : ' || TOTAL_ACHAT||'$');
-       IF TOTAL_ACHAT >= 10000 THEN
-        UPDATE CUSTOMERS 
-        SET CUSTOMERS.CREDIT_LIMIT = CREDIT_LIMIT + 50 WHERE customer_id = M.CUSTOMER_ID  ;
-         NOMBRE_LIGNE := NOMBRE_LIGNE + 1;
-     
-       END IF;
-       TOTAL_ACHAT := 0;
-      END IF;
-     i := 0;
-     END LOOP;
-              
-       DBMS_OUTPUT.PUT_LINE(' ***************************** fin ***************************** ');
-      dbms_output.put_line('le nombre de ligne ayant été mise à jour : '||NOMBRE_LIGNE);
+    id_customer orders.customer_id%type;
+    I INTEGER :=0;
+    CURSOR C_customer is 
+    select DISTINCT(CUSTOMER_ID) FROM CUSTOMERS;
     
-         DBMS_OUTPUT.PUT_LINE('**************************************************************** ');
+    
+    cursor C_shipped is
+    select sum(order_items.unit_price) AS total from orders inner join order_items on orders.order_id = order_items.order_id  and orders.customer_id = id_customer and orders.status = 'Shipped';
+    
+    
+BEGIN
+    FOR M IN C_customer LOOP
+    id_customer :=M.CUSTOMER_ID;
+       for N in C_shipped loop
+       
+       if N.total is null then
+        DBMS_OUTPUT.PUT_LINE('customer :'||id_customer||' ->  0$');
+       else
+         DBMS_OUTPUT.PUT_LINE('customer :'||id_customer||' ->  '|| N.total||'$');
+         if N.total > 10000 then
+         UPDATE customers
+         SET CREDIT_LIMIT = CREDIT_LIMIT + 50;
+         
+         IF SQL%NOTFOUND THEN
+         DBMS_OUTPUT.PUT_LINE('NO CUSTOMERS SELECTED ');
+         ELSIF SQL%FOUND THEN
+         I:=I + 1;
+         END IF;
+         
+         end if;
+     end if;
+     
+     END LOOP;
+     
+ end loop;
+
+     DBMS_OUTPUT.PUT_LINE('LE NOMBRE DES LIGNE QUI EN ETE MISE A JOUR : '|| I);
 
 END;
-/
