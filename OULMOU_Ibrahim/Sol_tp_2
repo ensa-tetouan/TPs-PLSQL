@@ -1,0 +1,239 @@
+--QUESTION1:
+
+SET SERVEROUTPUT ON;
+DECLARE
+        c_id employees.employee_id%type;
+        c_last_name employees.LAST_NAME%type;
+        c_first_name employees.FIRST_NAME%type;
+        c_hire_date employees.HIRE_DATE%type;
+        c_job employees.JOB_TITLE%type;
+        c_manager employees.MANAGER_ID%type;
+        c_name employees.LAST_NAME%type;
+    cursor c_employee is
+    select FIRST_NAME,LAST_NAME,EMPLOYEE_ID,JOB_TITLE,HIRE_DATE,MANAGER_ID from employees;
+
+BEGIN
+    open c_employee;
+    loop
+    fetch c_employee into c_first_name,c_last_name,c_id,c_job,c_hire_date,c_manager;
+       if c_manager is null then
+          DBMS_OUTPUT.PUT_LINE('Employé' || c_first_name || ' ' || c_last_name || '(ID : ' || c_id || ')'  || ' ' || 'travaille comme'  || ' ' || c_job || ' ' ||
+          'depuit ' || c_hire_date || 'sous aucun direction  '  ||  '(matricule:' ||   c_manager  || ').');
+       else
+    select LAST_NAME into c_name from employees where EMPLOYEE_ID = c_manager;
+ 
+    DBMS_OUTPUT.PUT_LINE('Employé' || c_first_name || ' ' || c_last_name || '(ID : ' || c_id || ')'  || ' ' || 'travaille comme'  || ' ' || c_job || ' ' ||
+    'depuit ' || c_hire_date || 'sous la direction de ' || c_name ||  '(matricule:' ||   c_manager  || ').');
+       end if;
+    exit when c_employee%notfound;
+    end loop;
+    close c_employee;
+ 
+END;
+
+
+------------------------------------------------------------------------------------------------------------------------
+--QUESTION2:
+
+SET SERVEROUTPUT ON;
+DECLARE
+        c_id customers.CUSTOMER_ID%type;
+        c_nom customers.NAME%type;
+        v_nbr int;
+        c_last_name employees.LAST_NAME%type;
+        c_first_name employees.FIRST_NAME%type;
+        c_ide employees.employee_id%type;
+        v_numero int;
+
+    cursor c_custmer is
+    select CUSTOMER_ID,NAME  from customers;
+    cursor c_employee is
+    select FIRST_NAME,LAST_NAME,EMPLOYEE_ID from employees;
+
+BEGIN
+    open c_custmer;
+    loop
+    fetch c_custmer into c_id,c_nom;
+    select COUNT(*) into v_nbr FROM orders where CUSTOMER_ID=c_id;
+    DBMS_OUTPUT.PUT_LINE('le client ' || c_nom || ' ' || 'a' || ' ' || v_nbr || ' ' || 'commande'  );
+    exit when c_custmer%notfound;
+    end loop;
+    close c_custmer;
+    open c_employee;
+    loop
+    fetch c_employee into c_first_name,c_last_name,c_ide;
+    select COUNT(*) into v_numero FROM orders where SALESMAN_ID=c_ide;
+
+    DBMS_OUTPUT.PUT_LINE('Employee ' || c_first_name || ' ' || c_last_name || ' ' || 'a' || ' ' || v_numero || ' ' || 'vente'  );
+    exit when c_employee%notfound;
+    end loop;
+    close c_employee;
+
+END;
+
+
+-------------------------------------------------------------------------------------------------------------------------------
+--QUESTION3:
+
+SET SERVEROUTPUT ON;
+DECLARE
+    v_CustomerID            NUMBER;
+    v_OrderID               NUMBER;
+    v_OrdersTotalCost       NUMBER := 0;
+    v_BonusCredit           NUMBER := 50;
+    v_EditedRowsCount       NUMBER := 0;
+    r_OrderItems            ORDER_ITEMS%ROWTYPE;
+    CURSOR c_GetCustomerID  IS SELECT CUSTOMER_ID FROM CUSTOMERS;
+    CURSOR c_GetOrdersID    IS SELECT ORDER_ID FROM ORDERS WHERE CUSTOMER_ID=v_CustomerID;
+    CURSOR c_GetOrderItems  IS SELECT * FROM ORDER_ITEMS WHERE ORDER_ID=v_OrderID;
+
+
+    v_test number;
+
+BEGIN
+    OPEN c_GetCustomerID;
+    LOOP FETCH c_GetCustomerID INTO v_CustomerID; EXIT WHEN c_GetCustomerID%NOTFOUND;
+        v_OrdersTotalCost := 0;
+        OPEN c_GetOrdersID;
+        LOOP FETCH c_GetOrdersID INTO v_OrderID; EXIT WHEN c_GetOrdersID%NOTFOUND;
+            OPEN c_GetOrderItems;
+            LOOP FETCH c_GetOrdersID INTO v_OrderID; EXIT WHEN c_GetOrdersID%NOTFOUND;
+            OPEN c_GetOrderItems;
+            LOOP FETCH c_GetOrderItems INTO r_OrderItems; EXIT WHEN c_GetOrderItems%NOTFOUND;
+                v_OrdersTotalCost := v_OrdersTotalCost + (r_OrderItems.UNIT_PRICE * r_OrderItems.QUANTITY);
+            END LOOP;
+            CLOSE c_GetOrderItems;
+        END LOOP;
+        CLOSE c_GetOrdersID;
+IF v_OrdersTotalCost > 20000 THEN
+            UPDATE CUSTOMERS
+                SET CUSTOMERS.CREDIT_LIMIT = CUSTOMERS.CREDIT_LIMIT + v_BonusCredit
+                WHERE CUSTOMERS.CUSTOMER_ID = v_CustomerID;
+            v_EditedRowsCount := v_EditedRowsCount + 1;
+            DBMS_OUTPUT.PUT_LINE('Customer: ' || v_CustomerID || ' .. Orders Total Cost: ' || v_OrdersTotalCost);
+            --DBMS_OUTPUT.PUT_LINE('v_RowCount: ' || v_RowCount);
+        END IF;
+END LOOP;
+            DBMS_OUTPUT.PUT_LINE('v_EditedRowsCount: ' || v_EditedRowsCount);
+
+    CLOSE c_GetCustomerID;
+END;
+    
+    
+------------------------------------------------------------------------------------------------------------------------------
+--question4;
+
+SET SERVEROUTPUT ON;
+DECLARE
+        v_client_id customers.customer_id%type;
+        v_order ORDERS.ORDER_ID%type;
+        CURSOR C_orders IS
+        SELECT distinct CUSTOMER_ID FROM ORDERS;
+        CURSOR C_ORDER IS
+        SELECT  ORDER_ID FROM ORDERS WHERE customer_id= v_client_id ;
+        NOMBRE_LIGNE int := 0;
+        TOTAL_ACHAT int :=0;
+        PRIX int :=0;
+BEGIN
+
+    OPEN C_orders;
+    loop
+    fetch C_orders into v_client_id;
+    exit when C_orders%notfound;
+    OPEN C_ORDER;
+    loop
+    fetch C_ORDER into v_order ;
+    exit when C_ORDER%notfound;
+    SELECT sum(unit_price*quantity) INTO PRIX FROM order_items  WHERE order_items.order_id = v_order;
+    TOTAL_ACHAT := TOTAL_ACHAT+PRIX;
+    end loop;
+    close C_ORDER;
+    DBMS_OUTPUT.PUT_LINE('la somme de client' || v_client_id ||' est  :'||TOTAL_ACHAT);  
+    IF TOTAL_ACHAT >= 100000 THEN
+        UPDATE CUSTOMERS
+        SET CUSTOMERS.CREDIT_LIMIT = CREDIT_LIMIT + 50 WHERE customer_id = v_client_id  ;
+        NOMBRE_LIGNE := NOMBRE_LIGNE + 1;
+    END IF;
+    TOTAL_ACHAT := 0;
+    end loop;
+    close C_orders;
+    DBMS_OUTPUT.PUT_LINE('nombre de lighne est  :'||NOMBRE_LIGNE); 
+        
+END;
+
+
+----------------------------------------------------------------------------------------------------------------------------
+--question5:
+
+SET SERVEROUTPUT ON;    
+
+DECLARE
+
+        v_salesman orders.salesman_id%type;
+        date_start orders.order_date%type;
+        date_end orders.order_date%type;
+        taux float;
+        sum1 integer;
+
+        Cursor c_salesman is
+        select  sum(QUANTITY*unit_price) as total_salesman from orders 
+        INNER JOIN order_items USING( order_id )
+        WHERE order_date BETWEEN date_start AND date_end 
+        AND salesman_id=v_salesman;
+      
+BEGIN
+        v_salesman:=&v_salesman;
+        date_start:='&date_start';
+        date_end:='&date_end';
+
+        select sum(QUANTITY*unit_price) into sum1 from orders 
+        INNER JOIN order_items USING( order_id )
+        WHERE order_date BETWEEN date_start AND  date_end;
+        DBMS_OUTPUT.PUT_LINE('le taux total de vente dans cette periode est' || sum1 || '$');
+        DBMS_OUTPUT.PUT_LINE('---------------------------------------------------------');
+        for j in c_salesman loop
+            taux:=j.total_salesman/sum1;
+            DBMS_OUTPUT.PUT_LINE('le taux de '|| v_salesman || ' est ' || round(taux,2) || '%');
+        end loop;
+
+END;
+
+
+------------------------------------------------------------------------------------------------------------------------------
+--question6:
+
+SET SERVEROUTPUT ON;    
+
+DECLARE
+        v_manager_id employees.manager_id%type;
+        booleen integer;  
+        total integer;
+
+        CURSOR managers is
+        select manager_id  from employees
+        where manager_id is not null
+        group by manager_id;
+        
+        CURSOR employees_list is 
+        select employee_id,count(salesman_id) as total from employees
+        LEFT JOIN orders ON employees.employee_id = orders.salesman_id
+        where manager_id=46
+        group by employee_id;
+BEGIN
+        v_manager_id:=&v_manager_id;
+        for i in managers loop
+        if i.manager_id=v_manager_id then
+            booleen:=1;
+            exit;
+        else 
+            booleen:=0;
+        end if;
+        end loop;
+        if booleen=0 then
+            DBMS_OUTPUT.PUT_LINE('ID non trouvable');
+        else
+            for m in employees_list loop
+              DBMS_OUTPUT.PUT_LINE('le nombre de vente de ' || m.employee_id || ' est ' || m.total);
+        end loop;
+        end if ;
+END;
