@@ -1,6 +1,9 @@
-------------------------------------------------------
-------------------------------------------------------
-------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+----------------------------| TP3: PROCEDURES - FUNCTIONS- TRIGGERS |-----------------------------
+----------------------------|           GI2/ ENSA TETOUAN           |-----------------------------
+----------------------------|           Ismail Abdelouahab          |-----------------------------
+--------------------------------------------------------------------------------------------------
+ 
  --EXERCICE 1 (Les procédures)
  SET SERVEROUTPUT ON;
  -- 1) Ecrire une Procédure qui ajoute un WAREHOUSE pour une location donnée.
@@ -140,4 +143,105 @@ BEGIN
   DBMS_OUTPUT.PUT_LINE('Le nombre de commandes qui ont le statut '||a||' est: ----- '||b||' -----');
 END;
 
+------------------------------------------------------
+------------------------------------------------------
+------------------------------------------------------
 
+-- EXERCICE 3 (Les déclencheurs)
+
+-- 1)Ecrire un déclencheur qui affiche le résumé d’une commande.
+CREATE OR REPLACE TRIGGER command_details
+AFTER INSERT ON orders 
+FOR EACH ROW
+BEGIN
+DBMS_OUTPUT.PUT_LINE('La commande suivant: ');
+DBMS_OUTPUT.PUT_LINE('order Id : '||:NEW.order_id);
+dbms_output.put_line('customer Id : ' ||:NEW.customer_id);
+dbms_output.put_line('status : ' ||:NEW.status);
+dbms_output.put_line('salseman id : '||:NEW.salesman_id);
+dbms_output.put_line('order date : '||:NEW.order_date);
+DBMS_OUTPUT.PUT_LINE('a été ajouée avec succès... ');
+END ;
+
+/*SET SERVEROUTPUT ON;
+Insert into OT.ORDERS (ORDER_ID,CUSTOMER_ID,STATUS,SALESMAN_ID,ORDER_DATE) values (181,1,'Shipped',54,to_date('17-NOV-16','DD-MON-RR'));
+
+ça affiche le résultat suivant dans la console
+La commande suivant: 
+order Id : 181
+customer Id : 1
+status : Shipped
+salseman id : 54
+order date : 17-NOV-16
+a été ajouée avec succès... 
+
+
+1 row inserted. */
+
+-- 2) Ecrire un déclencheur qui affiche une alerte du stocke une fois le nombre d’article disponible en inventaire est < 10.
+
+CREATE OR REPLACE TRIGGER stock_warning
+AFTER UPDATE 
+ON inventories
+FOR EACH ROW
+WHEN (NEW.quantity <10)
+BEGIN
+     DBMS_OUTPUT.PUT_LINE('Attention votre stock est inférieur à 10');
+END;
+/* SET SERVEROUTPUT ON;
+UPDATE inventories
+SET inventories.warehouse_id=700, inventories.quantity=9 WHERE inventories.product_id=211;
+
+Attention votre stock est inférieur à 10
+
+
+Error starting at line : 2 in command -
+UPDATE inventories
+SET inventories.warehouse_id=700, inventories.quantity=9 WHERE inventories.product_id=211
+Error report -
+ORA-00001: unique constraint (OT.PK_INVENTORIES) violated
+*/
+
+-- 3) Ecrire un déclencheur qui n’autorise pas la modification du CREDIT_LIMIT des clients entre le 28 et 30 de chaque mois.
+
+CREATE OR REPLACE TRIGGER block_modify
+BEFORE UPDATE 
+ON customers
+FOR EACH ROW
+DECLARE
+    v_jour DATE := EXTRACT(DATE FROM SYSDATE); -- pour récuperer la date du jour depuis le système.
+BEGIN
+     WHILE(v_jour >=28 and v_jour <=30) LOOP
+     DBMS_OUTPUT.PUT_LINE('Vous ne pouvez pas modifier le crédit limite aujourd''hui '||v_jour||'. Veuillez choisir un jour > 30 ou < 28');
+     :NEW.credit_limit := :OLD.credit_limit;
+     END LOOP;
+END;
+
+-- 4) Ecrire un déclencheur qui interdit l’ajout d’un employé si HIRE_DATE est > a Date  d’aujourd’hui.
+
+CREATE TRIGGER block_add
+BEFORE INSERT 
+ON employees
+FOR EACH ROW
+DECLARE
+BEGIN
+IF(:NEW.hire_date > SYSDATE) THEN
+raise_application_error(-20212022,'Vous êtes intérdit d''ajouté un employé aujourd''hui. Choisissez une date antérieure !');
+END IF;
+END;
+
+-- 5) Ecrire un déclencheur qui applique une remise de 5% si le prix total de la commande est > 10000$.
+
+CREATE OR REPLACE TRIGGER T_remise
+BEFORE  update OR INSERT  
+ON order_items
+FOR EACH ROW 
+DECLARE
+Total_Price number ; 
+BEGIN
+SELECT SUM(quantity*unit_price) INTO Total_price FROM order_items WHERE order_id= :NEW.order_id ; 
+IF(Total_Price > 10000 )THEN
+ :NEW.unit_price:= :OLD.unit_price - 0.05*:OLD.unit_price;
+END IF; 
+DBMS_OUTPUT.PUT_LINE('Le nouveau prix unitaire est: '||:NEW.unit_price);
+END;
