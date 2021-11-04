@@ -1,0 +1,213 @@
+-----------Procédures------------------
+-----------QUESTION 1------------------
+SET SERVEROUTPUT ON;
+Declare
+v_wrhs_nom warehouses.warehouse_name%type;
+v_wrhs_id warehouses.warehouse_id%type;
+v_whrs_localisation warehouses.location_id%type;
+PROCEDURE addWrhs(a warehouses.warehouse_id%type, b warehouses.warehouse_name%type, c warehouses.location_id%type) IS
+BEGIN
+    INSERT INTO WAREHOUSES(warehouse_id, warehouse_name, location_id)
+    VALUES (a, b, c);
+END;
+BEGIN
+v_wrhs_id := &warehouse_id;
+v_wrhs_nom := '&warehouse_name';
+v_whrs_localisation := '&location_id';
+addWarehouse(v_wrhs_id, v_wrhs_nom, v_whrs_localisation);
+dbms_output.put_line('Warehouse ajouté avec succès');
+END;
+-----------QUESTION 2------------------
+SET SERVEROUTPUT ON;
+declare
+v_wrhs_id warehouses.warehouse_id%type;
+v_wrhs_nom warehouses.warehouse_name%type;
+v_whrs_localisation warehouses.location_id%type;
+PROCEDURE UpdateWarehouse(a warehouses.warehouse_id%type, b warehouses.warehouse_name%type, c warehouses.location_id%type) IS
+BEGIN
+    UPDATE WAREHOUSES
+    SET  WAREHOUSE_NAME = b, LOCATION_ID = c
+    WHERE WAREHOUSE_ID = a;
+END;
+BEGIN
+v_wrhs_id := &warehouse_id;
+v_wrhs_nom := '&warehouse_name';
+v_whrs_localisation := '&location_id';
+UpdateWarehouse(v_wrhs_id, v_wrhs_nom, v_whrs_localisation);
+dbms_output.put_line('Warehouse mis a jour avec succès');
+END;
+-----------QUESTION 3------------------
+SET SERVEROUTPUT ON;
+declare
+v_wrhs_id warehouses.warehouse_id%type;
+PROCEDURE DeleteWarehouse(a warehouses.warehouse_id%type) IS
+BEGIN
+    DELETE FROM WAREHOUSES
+    WHERE WAREHOUSE_ID = a;
+END;
+BEGIN
+v_wrhs_id := &warehouse_id;
+DeleteWarehouse(v_wrhs_id);
+dbms_output.put_line('Warehouse supprimé avec succès');
+END;
+-----------QUESTION 4------------------
+SET SERVEROUTPUT ON;
+declare
+v_whrs_localisation warehouses.location_id%type := '&location_id';
+PROCEDURE SelectWarehouse(c warehouses.location_id%type) IS
+     a warehouses.location_id%type := c;
+     v_wrhs_id warehouses.warehouse_id%type;
+     v_wrhs_nom warehouses.warehouse_name%type;
+     CURSOR c_wrhs(d warehouses.location_id%type)  is (select WAREHOUSE_ID, WAREHOUSE_NAME FROM warehouses where LOCATION_ID = d);
+BEGIN
+OPEN c_wrhs(a);
+LOOP
+FETCH c_wrhs into v_wrhs_id, v_wrhs_nom;
+    EXIT WHEN c_wrhs%notfound;
+    dbms_output.put_line('ID : ' || v_wrhs_id || ' - NAME : ' || v_wrhs_nom);
+END LOOP;
+CLOSE c_wrhs;
+END;
+BEGIN
+dbms_output.put_line('___________________________________');
+SelectWarehouse(v_whrs_localisation);
+
+dbms_output.put_line('___________________________________');
+END;
+-----------QUESTION 5------------------
+SET SERVEROUTPUT ON;
+declare
+v_wrhs_id orders.salesman_id%type := &salesman_id;
+PROCEDURE CalculerCA(c orders.salesman_id%type) IS
+     a orders.salesman_id%type := c;
+     c_id orders.salesman_id%type;
+     c_ca NUMBER;
+     CURSOR c_salesman(d orders.salesman_id%type)  is (select a.salesman_id, sum(b.quantity*b.unit_price) CA FROM orders a, order_items b WHERE salesman_id = d group by salesman_id  );
+BEGIN
+OPEN c_salesman(a);
+LOOP
+FETCH c_salesman into c_id, c_ca;
+    EXIT WHEN c_salesman%notfound;
+    dbms_output.put_line('ID : ' || c_id || ' - C.A : ' || c_ca);
+END LOOP;
+CLOSE c_salesman;
+END;
+BEGIN
+dbms_output.put_line('___________________________________');
+CalculerCA(v_wrhs_id);
+
+dbms_output.put_line('___________________________________');
+END;
+-----------Fonctions-------------------
+-----------QUESTION 1------------------
+SET SERVEROUTPUT ON;
+declare
+v_wrhs_id orders.customer_id%type := &customer_id;
+fin number;
+FUNCTION CalculerTotal(c orders.customer_id%type)
+    return number is c_total number;
+     a orders.customer_id%type := c;
+     iid orders.customer_id%type;
+     CURSOR c_cst(d orders.customer_id%type)  is (SELECT customer_id, SUM(unit_price * quantity) total 
+     FROM order_items INNER JOIN orders USING (order_id) WHERE status = 'Shipped' AND CUSTOMER_ID = d GROUP BY customer_id );
+BEGIN
+OPEN c_cst(a);
+FETCH c_cst into iid, c_total;
+CLOSE c_cst;
+return c_total;
+END;
+BEGIN
+dbms_output.put_line('___________________________________');
+fin := CalculerTotal(v_wrhs_id);
+
+dbms_output.put_line('TOTAL : ' || fin);
+dbms_output.put_line('___________________________________');
+END;
+-----------QUESTION 2------------------
+SET SERVEROUTPUT ON;
+declare
+fin number;
+FUNCTION Pending return number is c_count number;
+     CURSOR c_order is (SELECT count(*) FROM orders WHERE status = 'Pending');
+BEGIN
+OPEN c_order;
+FETCH c_order into c_count;
+CLOSE c_order;
+return c_count;
+END;
+BEGIN
+dbms_output.put_line('___________________________________');
+fin := Pending();
+
+dbms_output.put_line('Nombre de commandes est : ' || fin);
+dbms_output.put_line('___________________________________');
+END;
+-----------Déclancheurs----------------
+-----------QUESTION 1------------------
+create or replace TRIGGER resume_ord
+BEFORE INSERT OR UPDATE OR DELETE ON ORDERS
+FOR EACH ROW
+BEGIN
+    IF INSERTING THEN
+        dbms_output.put_line('-->INSERSION : ORDER ID : ' || :nv.order_id || '- CUSTOMER ID : ' || :nv.customer_id );
+    END IF;
+
+    IF UPDATING THEN
+        dbms_output.put_line('-->MISE A JOUR :  ORDER ID : ' || :anc.order_id || ' est change par : ' || :nv.order_id );
+    END IF;
+
+    IF DELETING THEN
+        dbms_output.put_line('-->SUPPRESSION :  ORDER ID : ' || :anc.order_id || ' est supprime ' );
+    END IF;
+END;
+-----------QUESTION 2------------------
+create or replace TRIGGER alert
+AFTER INSERT OR UPDATE ON inventories
+FOR EACH ROW
+DECLARE
+    v_min inventories.quantity%type := 10;
+    v_quan inventories.quantity%type := :nv.quantity;
+BEGIN
+        IF(v_quan < v_min) THEN
+        dbms_output.put_line('ALERT, le nombre d article est inferieur a 10 ');
+        END IF;
+END;
+-----------QUESTION 3------------------
+CREATE OR REPLACE TRIGGER mod_crd_lmt
+    BEFORE UPDATE ON CUSTOMERS
+    FOR EACH ROW
+DECLARE
+    v_date     NUMBER := EXTRACT(DAY FROM SYSDATE);
+BEGIN
+    IF v_date <= 30 AND  28 <= v_date THEN
+        DBMS_OUTPUT.PUT_LINE('Impossible d utiliser une date ' || v_date);
+        :nv.CREDIT_LIMIT := :anc.CREDIT_LIMIT;
+    END IF;
+END;
+-----------QUESTION 4------------------
+CREATE OR REPLACE TRIGGER hr_date
+    AFTER INSERT ON employees
+    FOR EACH ROW
+DECLARE
+    v_date employees.hire_date%type := :nv.hire_date;
+    v_dateAct employees.hire_date%type := SYSDATE;
+    PROCEDURE interdit IS
+    BEGIN
+        raise_application_error(-20710, 'Impossible de faire l ajout ');
+    END;
+BEGIN
+
+    IF (v_date > v_dateAct) THEN
+        interdit();
+    END IF;
+END;
+-----------QUESTION 5------------------
+CREATE OR REPLACE TRIGGER tot_com
+	AFTER INSERT OR UPDATE ON ORDER_ITEMS
+	FOR EACH ROW
+DECLARE
+BEGIN
+    if(:nv.unit_price >10000) then
+	UPDATE ORDER_ITEMS SET unit_price =unit_price - unit_price*(0.05);
+    end if;
+end;
