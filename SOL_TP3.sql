@@ -3,7 +3,7 @@
 ----------------------------|           GI2/ ENSA TETOUAN           |-----------------------------
 ----------------------------|           Ismail Abdelouahab          |-----------------------------
 --------------------------------------------------------------------------------------------------
- 
+
  --EXERCICE 1 (Les procédures)
  SET SERVEROUTPUT ON;
  -- 1) Ecrire une Procédure qui ajoute un WAREHOUSE pour une location donnée.
@@ -177,6 +177,7 @@ a été ajouée avec succès...
 
 
 1 row inserted. */
+<<<<<<< HEAD
 
 -- 2) Ecrire un déclencheur qui affiche une alerte du stocke une fois le nombre d’article disponible en inventaire est < 10.
 
@@ -191,6 +192,8 @@ END;
 /* SET SERVEROUTPUT ON;
 UPDATE inventories
 SET inventories.warehouse_id=700, inventories.quantity=9 WHERE inventories.product_id=211;
+=======
+>>>>>>> 01880f3682de09fbfa75654b6672c745ddaecad3
 
 Attention votre stock est inférieur à 10
 
