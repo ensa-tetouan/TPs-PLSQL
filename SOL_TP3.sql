@@ -1,6 +1,8 @@
-------------------------------------------------------
-------------------------------------------------------
-------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+----------------------------| TP3: PROCEDURES - FUNCTIONS- TRIGGERS |-----------------------------
+----------------------------|           GI2/ ENSA TETOUAN           |-----------------------------
+----------------------------|           Ismail Abdelouahab          |-----------------------------
+--------------------------------------------------------------------------------------------------
  --EXERCICE 1 (Les procédures)
  SET SERVEROUTPUT ON;
  -- 1) Ecrire une Procédure qui ajoute un WAREHOUSE pour une location donnée.
@@ -140,4 +142,38 @@ BEGIN
   DBMS_OUTPUT.PUT_LINE('Le nombre de commandes qui ont le statut '||a||' est: ----- '||b||' -----');
 END;
 
+------------------------------------------------------
+------------------------------------------------------
+------------------------------------------------------
+
+-- EXERCICE 3 (Les déclencheurs)
+
+-- 1)Ecrire un déclencheur qui affiche le résumé d’une commande.
+CREATE OR REPLACE TRIGGER command_details
+AFTER INSERT ON orders 
+FOR EACH ROW
+BEGIN
+DBMS_OUTPUT.PUT_LINE('La commande suivant: ');
+DBMS_OUTPUT.PUT_LINE('order Id : '||:NEW.order_id);
+dbms_output.put_line('customer Id : ' ||:NEW.customer_id);
+dbms_output.put_line('status : ' ||:NEW.status);
+dbms_output.put_line('salseman id : '||:NEW.salesman_id);
+dbms_output.put_line('order date : '||:NEW.order_date);
+DBMS_OUTPUT.PUT_LINE('a été ajouée avec succès... ');
+END ;
+
+/*SET SERVEROUTPUT ON;
+Insert into OT.ORDERS (ORDER_ID,CUSTOMER_ID,STATUS,SALESMAN_ID,ORDER_DATE) values (181,1,'Shipped',54,to_date('17-NOV-16','DD-MON-RR'));
+
+ça affiche le résultat suivant dans la console
+La commande suivant: 
+order Id : 181
+customer Id : 1
+status : Shipped
+salseman id : 54
+order date : 17-NOV-16
+a été ajouée avec succès... 
+
+
+1 row inserted. */
 
