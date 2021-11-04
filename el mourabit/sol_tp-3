@@ -1,0 +1,141 @@
+_--______________________________________________________TP3(plsql)_____________________________________________--
+
+--Realiser par : EL MOURABIT Asmae / KAAOUASS Chaimaa (GI2)
+
+--------------------------------------------Partie 1-----------------------------------------
+--1)
+SET SERVEROUTPUT ON;
+CREATE Procedure Ajout_war (v_location_id IN Locations.location_id%type) IS
+locount number:=0;
+warcount number:=0;
+v_warehouse_name Locations.city%type;
+
+BEGIN
+
+SELECT count(location_id) INTO  locount From Locations where location_id=v_location_id ;
+SELECT count(location_id) INTO  warcount From warehouses where location_id=v_location_id ;
+
+if locount=1 and warcount=0 then
+
+SELECT city from Locations into v_warehouse_name From Locations where location_id=v_location_id ;
+insert into warehouses(location_id,warehouse_name) values(v_location_id,v_warehouse_name);
+
+else  
+dbms_output.put_line('ID non trouver');
+end if;
+end Ajout_war ;
+
+--2)
+SET SERVEROUTPUT ON;
+CREATE Procedure Met_a_jour (v_location_id IN Locations.location_id%type, v_warehouse_name IN Locations.city%type) IS
+warcount number:=0;
+BEGIN
+SELECT count(location_id) INTO  warcount From warehouses where location_id=v_location_id ;
+
+if warcount=1 then
+  Update warehouses set warehouse_name=v_warehouse_name WHERE location_id=v_location_id;
+  else
+dbms_output.put_line('ID non trouver');
+end if;
+end Met_a_jour;
+
+--3)
+SET SERVEROUTPUT ON;
+CREATE Procedure supprimer_war(v_warehouse_id IN warehouses.warehouse_id%type) IS
+warcount number:=0;
+BEGIN
+SELECT count(warehouse_id) INTO  warcount From warehouses where warehouse_id=v_warehouse_id;
+if warcount=1 then 
+delete from warehouses where warehouse_id=v_warehouse_id;
+else
+dbms_output.put_line('ID non trouver');
+end if;
+end supprimer_war;
+
+--4)
+SET SERVEROUTPUT ON;
+CREATE Procedure affiche_war(v_location_id IN warehouses.location_id%type) 
+locount number:=0;
+Affichage WAREHOUSES%ROWTYPE;
+BEGIN
+SELECT count(location_id) INTO  locount From warehouses where location_id=v_location_id;
+if locount >=1 then 
+SELECT *  into Affichage  from warehouses where location_id=v_location_id;
+dbms_output.put(' Pour id_location'||Affichage.location_id||'; il y a warehouse : '||Affichage.warehouse_name||'
+	; avec warehouse_id = '||Affichage.warehouse_id);
+else
+dbms_output.put_line('Id location non valide ');
+end if;
+end affiche_war;
+--5)
+SET SERVEROUTPUT ON;
+CREATE Procedure CA(v_employee_id IN employees.employee_id%type) IS
+CA number:=0;
+BEGIN
+    FOR v_employee IN (SELECT * FROM orders WHERE salesman_id=v_employee_id) LOOP
+        FOR v_order IN (SELECT * FROM order_items WHERE order_id=v_employee.order_id ) LOOP
+                    CA := CA+(v_order.unit_price*v_order.quantity);
+        end LOOP;
+    end LOOP;
+        dbms_output.put_line('CA est '||CA);
+END CA;
+------------------------------------Partie2----------------------------------------------
+--1)
+SET SERVEROUTPUT ON;
+CREATE FUNCTION Prix_tot(v_customer_id IN orders.customer_id%TYPE)
+RETURN number IS
+prix number:=0;
+BEGIN
+    FOR v_customer IN (SELECT * FROM orders WHERE customer_id=v_customer_id) LOOP
+        FOR v_order IN (SELECT * FROM order_items WHERE order_id=v_customer.order_id ) LOOP
+                    prix := prix+(v_order.unit_price*v_order.quantity);
+        end LOOP;
+    end LOOP;
+        dbms_output.put_line('le prix total est '||PRIX);
+        return prix;
+END;
+SET SERVEROUTPUT ON;
+BEGIN 
+    dbms_output.put_line('le prix total est'||Prix_tot(1));
+END;
+--2)
+CREATE FUNCTION nombre_order
+RETURN number IS
+nombre number:=0;
+BEGIN
+     SELECT count(*) INTO nombre FROM orders WHERE status='Pending';
+     return nombre;
+END;
+SET SERVEROUTPUT ON;
+BEGIN 
+    dbms_output.put_line('Nombre de commande qui ont le statut : Pending est '||nombre_order);
+END;
+-----------------------------------Partie 3---------------------------------------------
+--1)
+SET SERVEROUTPUT ON;
+CREATE TRIGGER Resume
+After INSERT OR UPDATE OR DELETE ON orders
+for EACH ROW
+DECLARE
+
+BEGIN
+IF inserting OR updating then
+dbms_output.put_line('id commande: '|| :new.order_id || 'id client: '|| :new.customer_id || ' status: '|| :new.status || 'Salesman id: '||
+ :new.salesman_id || 'Date:'|| :new.order_date);
+elsif deleting then
+dbms_output.put_line('Commande id supprimer: '|| :new.order_id || ' Id client supprimer: '|| :new.customer_id || 'Status supprimer : '||
+ :new.status || 'Salesman id supprimé: '|| :new.salesman_id || 'Date supprimer: '|| :new.order_date);
+end if;
+END;
+--2)
+SET SERVEROUTPUT ON;
+CREATE TRIGGER alerte_stocke
+AFTER INSERT OR UPDATE OF quantity ON inventories
+for each ROW
+declare
+v_quantity inventories.quantity%type 
+BEGIN
+If ( v_quantity < 10 ) then
+dbms_output.put_line('nombre d’article dispo < 10');
+end if ;
+END;
